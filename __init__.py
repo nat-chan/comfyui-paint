@@ -1,19 +1,98 @@
-import server  # noqa
-from server import PromptServer  # noqa
-import aiohttp
+import asyncio
+import base64
+import io
+import re
+import zlib
+from abc import ABCMeta
 from pathlib import Path
+
+import aiohttp
+import server  # noqa
+import torch
+from psd_tools import PSDImage
+from server import PromptServer  # noqa
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 WEB_DIRECTORY = "./js"
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
 
+MANAGED_PSD = dict()
+
+
 """
 https://zenn.dev/4kk11/articles/4e36fc68293bd2
 https://github.com/chrisgoringe/Comfy-Custom-Node-How-To/wiki/api
-https://github.com/chrisgoringe/Comfy-Custom-Node-How-To/wiki/data_types
 """
 
+
+# {{{ node ---
+def format_class_name(class_name: str) -> str:
+    """先頭以外の大文字の前に空白を挟む"""
+    formatted_name = re.sub(r"(?<!^)(?=[A-Z])", " ", class_name)
+    return formatted_name
+
+
+class CustomNodeMeta(ABCMeta):
+    def __new__(
+        cls,
+        name: str,
+        bases: list,
+        attrs: dict,
+    ) -> "CustomNodeMeta":
+        global NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+
+        @classmethod
+        def _(cls):
+            return {"required": cls.REQUIRED}
+
+        new_class = super().__new__(
+            cls,
+            name,
+            bases,
+            attrs
+            | {
+                "FUNCTION": "run",
+                "CATEGORY": "Paint",
+                "INPUT_TYPES": _,
+            },
+        )
+        NODE_CLASS_MAPPINGS[name] = new_class
+        NODE_DISPLAY_NAME_MAPPINGS[name] = format_class_name(name) + "🎨"
+        return new_class
+
+
+def matches_pattern(pattern: str, input_text: str) -> bool:
+    regex = re.compile(pattern)
+    return regex.fullmatch(input_text) is not None
+
+
+class RecieveFromPaint(metaclass=CustomNodeMeta):
+    OUTPUT_NODE = True
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("layer",)
+    REQUIRED = {
+        "layer_name": ("STRING", {"multiline": False, "default": "Background"}),
+        "seed": ("INT:seed", {}),
+    }
+
+    def run(
+        self,
+        layer_name: str,
+        seed: int,
+    ) -> tuple[str]:
+        for layer in MANAGED_PSD["psd"]:
+            if matches_pattern(layer_name, layer.name):
+                np_array = layer.numpy()
+                print(np_array.dtype, np_array.shape, np_array.max(), np_array.min())
+                tensor_array = torch.from_numpy(np_array).unsqueeze(0)
+                return (tensor_array,)
+        return (None,)
+
+
+# --- node }}}
+
+# {{{ server ---
 routes: aiohttp.web_routedef.RouteTableDef = PromptServer.instance.routes
 app: aiohttp.web_app.Application = PromptServer.instance.app
 
@@ -30,3 +109,21 @@ async def get_js_file(request):
     filename = request.match_info["filename"]
     file_path = Path(__file__).parent / "dist" / f"{filename}"
     return aiohttp.web.FileResponse(file_path)
+
+
+@routes.post("/recieve_psd")
+async def recieve_psd(request):
+    global MANAGED_PSD
+    data = await request.json()
+    decoded = base64.b64decode(data["fileData"])
+    decompressed = zlib.decompress(decoded)
+    header = b"data:application/octet-stream;base64,"
+    assert decompressed[: len(header)] == header
+    decompressed = decompressed[len(header) :]
+    dedecoded = base64.b64decode(decompressed)
+    psd = PSDImage.open(io.BytesIO(dedecoded))
+    MANAGED_PSD["psd"] = psd
+    return aiohttp.web.json_response({"status": "success"})
+
+
+# --- server }}}
