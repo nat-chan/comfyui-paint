@@ -1,0 +1,3 @@
+[submodule "klecks"]
+	path = klecks
+	url = git@github.com:nat-chan/klecks

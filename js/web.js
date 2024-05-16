@@ -15,6 +15,7 @@ let find_element = function(xpath, i){
 
 let hostname = window.location.hostname;
 let port = window.location.port;
+let pathname = window.location.pathname;
 
 app.registerExtension({
   name: "comfyui-paint",
@@ -39,8 +40,8 @@ app.registerExtension({
       nodeType.prototype.bgcolor = LGraphCanvas.node_colors.green.bgcolor;
     }
   },
-
   async setup() {
+    if (pathname !== "/paint") { return; }
     app.ui.menuContainer.appendChild(
       $el(
         "div.comfy-list",
@@ -108,7 +109,7 @@ app.registerExtension({
 									})
 									.then(response => response.json())
 									.then(data => {
-										console.log("PSDデータが正常に送信されました。");
+										console.log("PSDデータが正常に送信されました。", data);
                     app.queuePrompt(0);
 									})
 									.catch(error => {
@@ -124,32 +125,4 @@ app.registerExtension({
       )
     );
   },
-
-//	async registerCustomNodes() {
-//    function MyAddNode() {
-//      this.isVirtualNode = true;
-//      this.serialize_widgets = false;
-//      this.addInput("A","string");
-//      this.addInput("B","string");
-//      this.addOutput("A+B","string");
-//    }
-//    //name to show
-//    MyAddNode.title = "Sum";
-//
-//    //function to call when the node is executed
-//    MyAddNode.prototype.onExecute = function() {
-//      var A = this.getInputData(0);
-//      console.log(A, typeof(A));
-//      if( A === undefined )
-//        A = "0";
-//      var B = this.getInputData(1);
-//      console.log(B, typeof(B));
-//      if( B === undefined )
-//        B = "0";
-//      this.setOutputData( 0, `${A} + ${B}` );
-//    }
-//
-//    //register in the system
-//    LiteGraph.registerNodeType("basic/sum", MyAddNode);
-//  }
 });
