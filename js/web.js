@@ -109,6 +109,7 @@ app.registerExtension({
 									.then(response => response.json())
 									.then(data => {
 										console.log("PSDデータが正常に送信されました。");
+                    app.queuePrompt(0);
 									})
 									.catch(error => {
 										console.log("PSDデータの送信中にエラーが発生しました。", error);
