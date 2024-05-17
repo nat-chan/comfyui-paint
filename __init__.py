@@ -72,7 +72,7 @@ class RecieveFromPaint(metaclass=CustomNodeMeta):
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("layer",)
     REQUIRED = {
-        "layer_name": ("STRING", {"multiline": False, "default": "Background"}),
+        "layer_name": ("STRING", {"multiline": False, "default": "レイヤー 1"}),
         "seed": ("INT:seed", {}),
     }
 

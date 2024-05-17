@@ -1,89 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<title>comfyui-paint</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
-		<link rel="stylesheet" type="text/css" href="./lib/litegraph.css" />
-		<link rel="stylesheet" type="text/css" href="./style.css" />
-		<link rel="stylesheet" type="text/css" href="./user.css" />
-		<script type="text/javascript" src="./lib/litegraph.core.js"></script>
-		<script type="text/javascript" src="./lib/litegraph.extensions.js" defer></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
-		<script type="module">
-			import { app } from "./scripts/app.js";
-			await app.setup();
-			window.app = app;
-			window.graph = app.graph;
-		</script>
-	</head>
-	<body class="litegraph">
 
-		<script src="./dist/embed.js"></script>
-		<script type="text/javascript">
+<head>
+  <meta charset="UTF-8">
+  <title>ComfyUI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+  <link rel="stylesheet" type="text/css" href="./lib/litegraph.css" />
+  <link rel="stylesheet" type="text/css" href="./style.css" />
+  <link rel="stylesheet" type="text/css" href="./user.css" />
+  <link rel="stylesheet" href="./dist/index.5320b3f2.css">
+  <script type="text/javascript" src="./lib/litegraph.core.js"></script>
+  <script type="text/javascript" src="./lib/litegraph.extensions.js" defer></script>
+  <script nomodule defer src="./dist/index.runtime.237c6dfa.js"></script>
+  <script type="module" src="./dist/index.runtime.045d6322.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+  <script type="module">
+    import { app } from "./scripts/app.js";
+    await app.setup();
+    window.app = app;
+    window.graph = app.graph;
+  </script>
+</head>
 
-			/*
-			Using Klecks in a drawing community:
-			- on first time opening, start with a manually created project (klecks.openProject)
-			- on submit, upload psd (and png) to the server
-			- on continuing a drawing, read psd that was stored on server (klecks.readPsd -> klecks.openProject)
-			*/
+<body class="litegraph">
+  <link rel="stylesheet" href="./dist/index.fc8fdf7d.css">
+  <script type="module" src="./dist/index.ab1dda3d.js"></script>
+  <script src="./dist/index.06705927.js" nomodule defer></script>
+</body>
 
-			let saveData = (function () {
-					let a = document.createElement("a");
-					document.body.appendChild(a);
-					a.style = "display: none";
-					return function (blob, fileName) {
-							let url = window.URL.createObjectURL(blob);
-							a.href = url;
-							a.download = fileName;
-							a.click();
-							window.URL.revokeObjectURL(url);
-					};
-			}());
-
-			window.klecks = new Klecks({
-					// disableAutoFit: true,
-					onSubmit: (onSuccess, onError) => {
-							// download png
-							saveData(klecks.getPNG(), 'drawing.png');
-
-							/*// download psd
-							klecks.getPSD().then((blob) => {
-									saveData(blob, 'drawing.psd');
-							});*/
-
-							setTimeout(() => {
-									onSuccess();
-									location.reload();
-							}, 500);
-					},
-			});
-
-			let width = 1024;
-			let height = 1024;
-			klecks.openProject({
-					width: width,
-					height: height,
-					layers: [{
-							name: 'Background',
-							isVisible: true,
-							opacity: 1,
-							mixModeStr: 'source-over',
-							image: (() => {
-									const canvas = document.createElement('canvas');
-									canvas.width = width;
-									canvas.height = height;
-									const ctx = canvas.getContext('2d');
-									ctx.save();
-									ctx.fillStyle = '#fff';
-									ctx.fillRect(0, 0, canvas.width, canvas.height);
-									ctx.restore();
-									return canvas;
-							})(),
-					}]
-			});
-		</script>
-
-	</body>
 </html>
