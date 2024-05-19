@@ -3,6 +3,8 @@ import io
 import re
 from abc import ABCMeta
 from pathlib import Path
+from PIL import Image
+import numpy as np
 
 import aiohttp
 import torch
@@ -81,10 +83,33 @@ class RecieveFromPaint(metaclass=CustomNodeMeta):
         for layer in MANAGED_PSD["psd"]:
             if matches_pattern(layer_name, layer.name):
                 np_array = layer.numpy()
-                print(np_array.dtype, np_array.shape, np_array.max(), np_array.min())
                 tensor_array = torch.from_numpy(np_array).unsqueeze(0)
                 return (tensor_array,)
         return (None,)
+
+class SendToPaint(metaclass=CustomNodeMeta):
+    OUTPUT_NODE = True
+    RETURN_TYPES = ()
+    RETURN_NAMES = ()
+    REQUIRED = {
+        "layer_name": ("STRING", {"multiline": False, "default": "output"}),
+        "image": ("IMAGE",),
+    }
+
+    def run(
+        self,
+        layer_name,
+        image: torch.Tensor,
+    ) -> tuple:
+        array = image.detach().cpu().squeeze(0).mul(255).numpy().astype(np.uint8)
+        pil_image = Image.fromarray(array)
+        buffered = io.BytesIO()
+        pil_image.save(buffered, format="PNG")
+        base64png = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        payload = {"base64png": f"data:image/png;base64,{base64png}", "layer_name": layer_name}
+        PromptServer.instance.send_sync("send_to_paint", payload)
+        # , client_id) 第三引数にsid指定できる PromptServer.instance.client_id
+        return ()
 
 
 # --- node }}}

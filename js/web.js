@@ -17,6 +17,13 @@ let hostname = window.location.hostname;
 let port = window.location.port;
 let pathname = window.location.pathname;
 
+api.addEventListener("send_to_paint", ({ detail }) => {
+//  let { node, progress, text } = detail;
+  let layer_name = detail.layer_name;
+  let base64png = detail.base64png;
+  window.klecks.injectLayer(base64png, layer_name);
+});
+
 app.registerExtension({
   name: "comfyui-paint",
   async beforeRegisterNodeDef(nodeType, nodeData, app) {
@@ -35,7 +42,8 @@ app.registerExtension({
         }
         return r;
       }
-
+    }
+    if (nodeData.name === "RecieveFromPaint" || nodeData.name === "SendToPaint") {
       nodeType.prototype.color = LGraphCanvas.node_colors.green.color;
       nodeType.prototype.bgcolor = LGraphCanvas.node_colors.green.bgcolor;
     }
