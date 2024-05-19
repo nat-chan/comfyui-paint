@@ -95,11 +95,7 @@ app.registerExtension({
 							window.klecks.getPSD().then((blob) => {
 								let reader = new FileReader();
 								reader.onload = function() {
-                  let compressed = pako.deflate(reader.result);
-                  let base64 = btoa(String.fromCharCode.apply(null, compressed));
-                  console.log(base64);
-                  console.log(typeof(base64));
-									let data = JSON.stringify({ fileData: base64 });
+									let data = JSON.stringify({ fileData: reader.result });
 									fetch(`http://${hostname}:${port}/recieve_psd`, {
 										method: "POST",
 										headers: {

@@ -1,13 +1,10 @@
-import asyncio
 import base64
 import io
 import re
-import zlib
 from abc import ABCMeta
 from pathlib import Path
 
 import aiohttp
-import server  # noqa
 import torch
 from psd_tools import PSDImage
 from server import PromptServer  # noqa
@@ -115,11 +112,10 @@ async def get_js_file(request):
 async def recieve_psd(request):
     global MANAGED_PSD
     data = await request.json()
-    decoded = base64.b64decode(data["fileData"])
-    decompressed = zlib.decompress(decoded)
-    header = b"data:application/octet-stream;base64,"
-    assert decompressed[: len(header)] == header
-    decompressed = decompressed[len(header) :]
+    fileData = data["fileData"]
+    header = "data:application/octet-stream;base64,"
+    assert fileData[: len(header)] == header
+    decompressed = fileData[len(header) :]
     dedecoded = base64.b64decode(decompressed)
     psd = PSDImage.open(io.BytesIO(dedecoded))
     MANAGED_PSD["psd"] = psd
