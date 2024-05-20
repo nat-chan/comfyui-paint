@@ -87,18 +87,26 @@ class RecieveFromPaint(metaclass=CustomNodeMeta):
                 return (tensor_array,)
         return (None,)
 
+
+# TODO あわせる
 class SendToPaint(metaclass=CustomNodeMeta):
     OUTPUT_NODE = True
     RETURN_TYPES = ()
     RETURN_NAMES = ()
     REQUIRED = {
         "layer_name": ("STRING", {"multiline": False, "default": "output"}),
+        "mixModeStr": (['source-over', 'darken', 'multiply', 'color-burn', 'lighten', 'screen', 'color-dodge', 'overlay', 'soft-light', 'hard-light', 'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity'],),
+        "opacity": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+        "isVisible": (["true", "false"],),
         "image": ("IMAGE",),
     }
 
     def run(
         self,
-        layer_name,
+        layer_name: str,
+        mixModeStr: str,
+        opacity: float,
+        isVisible: str,
         image: torch.Tensor,
     ) -> tuple:
         array = image.detach().cpu().squeeze(0).mul(255).numpy().astype(np.uint8)
@@ -106,7 +114,14 @@ class SendToPaint(metaclass=CustomNodeMeta):
         buffered = io.BytesIO()
         pil_image.save(buffered, format="PNG")
         base64png = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        payload = {"base64png": f"data:image/png;base64,{base64png}", "layer_name": layer_name}
+        payload = {
+            "base64png": f"data:image/png;base64,{base64png}",
+            "layer_name": layer_name,
+            "mixModeStr": mixModeStr,
+            "opacity": opacity,
+            "isVisible": isVisible,
+        }
+
         PromptServer.instance.send_sync("send_to_paint", payload)
         # , client_id) 第三引数にsid指定できる PromptServer.instance.client_id
         return ()
