@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-paint"
+description = "comfyui-paint"
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["psd-tools==1.9.32"]
+
+[project.urls]
+Repository = "https://github.com/nat-chan/comfyui-paint"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyui-paint"
+Icon = ""
